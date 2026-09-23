@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.local-data/
+.env*
+.dev.vars*
+test-results/
+__pycache__/
+*.pyc
+.DS_Store
+offline-practice.html
