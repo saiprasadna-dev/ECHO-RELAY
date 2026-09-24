@@ -4,6 +4,26 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ServerAddressTest {
+    private static final String PUBLIC_SERVER = "https://echo-relay.swapmyshow.workers.dev/";
+
+    @Test public void firstLaunchAndWifiUpgradeUsePublicServer() {
+        assertEquals(PUBLIC_SERVER, ServerAddress.initialServer(null, PUBLIC_SERVER, null, true));
+        assertEquals(PUBLIC_SERVER, ServerAddress.initialServer("http://192.168.29.195:8788/?room=ABC234", PUBLIC_SERVER, null, true));
+        assertEquals(PUBLIC_SERVER, ServerAddress.initialServer("http://10.0.2.2:8788", PUBLIC_SERVER, "http://10.0.2.2:8788/", true));
+        assertEquals(PUBLIC_SERVER, ServerAddress.initialServer("invalid", PUBLIC_SERVER, null, true));
+    }
+
+    @Test public void migrationRetainsCustomHttpsAndLaterWifiChoices() {
+        assertEquals("https://custom.example/?room=ABC234",
+                ServerAddress.initialServer("https://custom.example/?room=ABC234", PUBLIC_SERVER, null, true));
+        assertEquals("http://192.168.1.2:8788/",
+                ServerAddress.initialServer("http://192.168.1.2:8788", PUBLIC_SERVER, PUBLIC_SERVER, true));
+        assertEquals(PUBLIC_SERVER,
+                ServerAddress.initialServer("http://192.168.1.2:8788", PUBLIC_SERVER, PUBLIC_SERVER, false));
+        assertEquals("http://10.0.2.2:8788/",
+                ServerAddress.initialServer(null, "http://10.0.2.2:8788", null, true));
+    }
+
     @Test public void acceptsPrivateWifiAndRoomInvitationsInDebug() {
         assertEquals("http://192.168.29.195:8788/", ServerAddress.normalize(" http://192.168.29.195:8788 ", true));
         assertEquals("http://10.0.2.2:8787/?room=ABC234", ServerAddress.normalize("http://10.0.2.2:8787/?room=ABC234", true));

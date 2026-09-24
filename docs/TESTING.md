@@ -107,7 +107,23 @@ Two independent HTTP/WebSocket clients completed all six destinations on the pro
 
 This was a production **protocol test**, not an automated browser or physical-phone playthrough. An initial test run reached the storm tower before the test client attempted its next action ahead of the other socket's level update; waiting for both clients' next-level state corrected the test, and a fresh full run passed without application changes. Local evidence is retained in ignored `test-results/cloudflare-live.mjs` and `test-results/cloudflare-live.txt`. The existing two-client UI release script remains unexecuted.
 
-## Deployment and broader release checks: pending
+## Android public-server APK: passed
+
+On September 24, 2026, Android APK **0.2.0-test**, version code **2**, was built with `https://echo-relay.swapmyshow.workers.dev` as its default. The exported package passed APK signature verification. Six JVM tests passed, including migration from the older Wi-Fi address, preservation of custom HTTPS addresses and retention of later manual local-server choices. Android lint reported **0 errors and 12 warnings**.
+
+The APK installed as an update over the previous test app on `ECHO_API36` (Android 16). The focused `publicServerUpgradeConnectsWithoutEditingAddress` instrumentation test passed in **16.591 seconds**: it seeded an old local invitation, recreated the launcher, checked the prefilled Cloudflare address and internet instructions, tapped Connect without editing the address, created a production room and observed **Relay connected** in the Android WebView. This focused check does not claim a full six-level production UI playthrough. Evidence is retained under ignored `test-results/android/`: `public-server-upgrade.txt`, `14-public-server-launcher.png` and `15-public-server-lobby.png`.
+
+APK SHA-256: `31837710e949613157b080f1658899c58e866f16242156d6a7bfbefecd428cae` (14,754,965 bytes). The package retains `com.echorelay.game.debug` and the existing development signing key for in-place updates. Offline assets exclude downloadable APKs.
+
+Published at `/downloads/echo-relay.apk` in Worker version `0e15f441-886b-4646-92f6-fd8800246e6f`. Download verification returned HTTP 200, Android package MIME type and attachment disposition; its SHA-256 matched the exported APK exactly. `/api/health` also returned HTTP 200. Evidence: `test-results/android/public-apk-download.json`.
+
+To repeat this focused live-service check after building/installing both APKs:
+
+```powershell
+adb -s emulator-5554 shell am instrument -w -r -e class 'com.echorelay.game.GameJourneyTest#publicServerUpgradeConnectsWithoutEditingAddress' -e publicServerCheck true com.echorelay.game.debug.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+## Broader release checks: pending
 
 Not yet verified:
 

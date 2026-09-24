@@ -61,8 +61,12 @@ public final class MainActivity extends Activity {
         preferences = getSharedPreferences("relay", MODE_PRIVATE);
         webContainer = findViewById(R.id.web_container);
         serverInput = findViewById(R.id.server_url);
-        serverInput.setText(preferences.getString("server", BuildConfig.DEFAULT_SERVER_URL));
-        if (!BuildConfig.DEBUG) {
+        String selectedServer = ServerAddress.initialServer(preferences.getString("server", null),
+                BuildConfig.DEFAULT_SERVER_URL, preferences.getString("default_server", null), BuildConfig.DEBUG);
+        preferences.edit().putString("server", selectedServer)
+                .putString("default_server", ServerAddress.normalize(BuildConfig.DEFAULT_SERVER_URL, BuildConfig.DEBUG)).apply();
+        serverInput.setText(selectedServer);
+        if (selectedServer.startsWith("https:")) {
             ((TextView) findViewById(R.id.server_note)).setText(R.string.internet_note);
             serverInput.setHint("https://your-game.workers.dev");
         }

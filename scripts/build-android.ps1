@@ -1,4 +1,4 @@
-param([string]$ServerUrl = '')
+param([string]$ServerUrl = 'https://echo-relay.swapmyshow.workers.dev')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $androidRoot = Join-Path $projectRoot 'android'
@@ -20,13 +20,7 @@ $env:ANDROID_USER_HOME = Join-Path $toolsRoot 'user'
 $sdkProperty = $sdkPath.Replace('\', '/').Replace(':', '\:')
 Set-Content -LiteralPath (Join-Path $androidRoot 'local.properties') -Encoding ascii -Value "sdk.dir=$sdkProperty"
 
-if (-not $ServerUrl) {
-    Push-Location $projectRoot
-    try { $ServerUrl = (& node --input-type=module -e "import {localNetworkConfig} from './scripts/local-network.mjs'; const a=localNetworkConfig({lan:true,port:8787}).addresses[0]; if(a) console.log('http://'+a+':8787');").Trim() }
-    catch { $ServerUrl = '' }
-    finally { Pop-Location }
-}
-if ($ServerUrl -and $ServerUrl -notmatch '^https?://[A-Za-z0-9.\-]+(?::[0-9]+)?/?$') {
+if (-not $ServerUrl -or $ServerUrl -notmatch '^https?://[A-Za-z0-9.\-]+(?::[0-9]+)?/?$') {
     throw 'ServerUrl must be a plain http:// or https:// server origin.'
 }
 
@@ -40,7 +34,10 @@ $outputDir = Join-Path $projectRoot 'dist'
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 $apk = Join-Path $outputDir 'echo-relay-android-debug.apk'
 Copy-Item -LiteralPath (Join-Path $androidRoot 'app\build\outputs\apk\debug\app-debug.apk') -Destination $apk -Force
-$hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
+$hasher = [System.Security.Cryptography.SHA256]::Create()
+$apkStream = [System.IO.File]::OpenRead($apk)
+try { $hash = [BitConverter]::ToString($hasher.ComputeHash($apkStream)).Replace('-', '').ToLowerInvariant() }
+finally { $apkStream.Dispose(); $hasher.Dispose() }
 Set-Content -LiteralPath "$apk.sha256" -Encoding ascii -Value "$hash  echo-relay-android-debug.apk"
 Write-Output "APK ready: $apk"
-Write-Output "Default Wi-Fi server: $ServerUrl (editable in the app)"
+Write-Output "Default game server: $ServerUrl (editable in the app)"

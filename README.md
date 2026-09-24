@@ -2,7 +2,7 @@
 
 **Change my past. Save our future.**
 
-**Play online:** [echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev). Use this same HTTPS address in the Android launcher. Online rooms are separate from rooms saved on your local development server.
+**Play online:** [echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev). The Android APK uses this HTTPS server by default. Online rooms are separate from rooms saved on your local development server.
 
 A two-player cooperative walking adventure. One traveller changes the past; the other anchors an object in the future so it survives the next change. Walk to objects to discover clues and controls across **The Root Bridge**, **The Clockwork Lift**, **The Last Light**, **The Moonlit Canal**, **The Storm Tower**, and **The Reunion Garden**. Both travellers reach the meeting circle before the shared celebration.
 
@@ -32,7 +32,7 @@ The local server is loopback-only by default. Use `npm run start:lan` to opt int
 
 ## Android app
 
-An Android project is included in `android/`. It bundles all six destinations for offline practice and connects to the same multiplayer server as browser players. Build the installable Wi-Fi test APK with `npm run android:build`; read [the Android guide](docs/ANDROID.md) for SDK setup, installation and two-phone testing.
+An Android project is included in `android/`. It bundles all six destinations for offline practice and connects to the public Cloudflare server by default. [Download the Android APK](https://echo-relay.swapmyshow.workers.dev/downloads/echo-relay.apk) or build it with `npm run android:build`; read [the Android guide](docs/ANDROID.md) for SDK setup, installation and testing. Version 0.2.0 updates the earlier Wi-Fi APK and migrates its saved local server address.
 
 ## Deploy to Cloudflare
 

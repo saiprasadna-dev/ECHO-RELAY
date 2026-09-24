@@ -2,7 +2,7 @@
 
 ## Current deployment
 
-Published September 24, 2026: **[https://echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev)**. Worker `echo-relay`, version `2464975b-bd6d-4d7f-b58e-a66e5601cf14`, deployed with Wrangler 4.137.0. This includes the static game assets and SQLite-backed `RelayRoom` Durable Object. Enter the same HTTPS URL in Android to connect from any network. Local room codes do not transfer to the production server.
+Published September 24, 2026: **[https://echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev)**. Worker `echo-relay`, version `0e15f441-886b-4646-92f6-fd8800246e6f`, deployed with Wrangler 4.137.0. This includes the static game assets, SQLite-backed `RelayRoom` Durable Object and [Android APK download](https://echo-relay.swapmyshow.workers.dev/downloads/echo-relay.apk). APK 0.2.0 uses the same HTTPS URL by default. Local room codes do not transfer to the production server.
 
 ## 1. Run the code first
 
@@ -46,6 +46,8 @@ Do not upload only `public/` to static-only Pages. Online multiplayer needs:
 These are already in `wrangler.jsonc`. Do not replace the SQLite migration with legacy key-value class configuration. Do not rewrite migration history for a service that has already been deployed.
 
 The npm scripts pin Wrangler to the verified deployment version, `4.137.0`. There is no automatic deployment workflow: Git pushes and Cloudflare deployments are separate actions.
+
+The APK and checksum in `public/downloads/` are build artifacts ignored by Git. Keep them present when deploying updates, or regenerate them using the [Android guide](ANDROID.md), to preserve the public download.
 
 ## 4. Check two real devices before sharing widely
 

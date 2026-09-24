@@ -2,21 +2,21 @@
 
 The Android app uses a native launcher and Android System WebView to run the same cinematic game as the browser. Environment artwork, traveller sprites, scripts, styles and puzzle rules are bundled for offline practice. Multiplayer loads the selected game server in its own origin, preserving the existing HTTP-only cookies, origin checks and WebSocket protocol. Android and browser players can share a relay.
 
-**Public server:** enter `https://echo-relay.swapmyshow.workers.dev` in the Android server field. The laptop player opens the same URL. This works over the internet without the laptop's local server; create a new online room because local room saves remain on the computer.
+**Public server:** `https://echo-relay.swapmyshow.workers.dev` is prefilled in APK 0.2.0. Tap **Connect to the relay**. The laptop player opens the same URL. This works over the internet without the laptop's local server; create a new online room because local room saves remain on the computer. Updating the older Wi-Fi APK replaces its saved local address once; custom HTTPS addresses and subsequent manual choices are retained.
 
 ## Install the test APK
 
 Build output: `dist/echo-relay-android-debug.apk` (Android 8.0 / API 26 or newer).
 
-1. With the Wi-Fi test server running, open its address with `/android.apk` on each phone to download the APK (for example `http://192.168.1.10:8787/android.apk`). Alternatively, copy `dist/echo-relay-android-debug.apk` to each phone using USB.
+1. Download [the Android APK](https://echo-relay.swapmyshow.workers.dev/downloads/echo-relay.apk) on each phone. Alternatively, copy `dist/echo-relay-android-debug.apk` using USB.
 2. Open the APK on the phone and allow installation from that file manager if Android asks.
 3. Open **ECHO RELAY**. **Explore solo offline** works immediately without a computer or internet connection.
-4. For multiplayer, connect both phones and the computer to the same private Wi-Fi. Keep the local server running. Enter the same computer server address on both phones and tap **Connect to the relay**.
+4. For multiplayer, use any working internet connection and tap **Connect to the relay** with the prefilled Cloudflare address. A laptop partner opens [the public game](https://echo-relay.swapmyshow.workers.dev). The computer's local server is not needed.
 5. One player creates a relay. The other joins its six-character code. Both select **Ready to begin**.
 
 During play, follow **Your next move** above the scene. **Easy guide** starts enabled: tap its location button, let your traveller arrive, then use the suggested action. The guide says when it is your partner's turn. **Level walkthrough** explains the whole current level; **Share clue** sends a discovered clue to your partner. In solo practice, use **Now play Past/Future** when prompted.
 
-The debug application ID is `com.echorelay.game.debug`. The APK is signed with a development key, suitable for local installation and testing; it is not a Play Store release.
+The debug application ID is `com.echorelay.game.debug`. Version 0.2.0 (version code 2) can install over the earlier test APK signed with the same development key. This is a directly installable test build, not a Play Store release.
 
 ## Start a Wi-Fi server
 
@@ -53,11 +53,11 @@ Install SDK packages through Android Studio's SDK Manager, or the official comma
 
 ```powershell
 npm run android:build
-# Or choose the default server address embedded in the launcher:
+# Optional: build for a local Wi-Fi development server instead:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1 -ServerUrl 'http://192.168.1.10:8788'
 ```
 
-The script runs `assembleDebug`, JVM unit tests and Android lint, then copies the APK and its SHA-256 to `dist/`. The address remains editable on each phone. Without an explicit address, the script uses the first private IPv4 interface and port 8787; check the printed address if the computer has multiple adapters.
+The script runs `assembleDebug`, JVM unit tests and Android lint, then copies the APK and its SHA-256 to `dist/`. The default is the public Cloudflare URL, both through this script and direct Gradle builds. The address remains editable on each phone.
 
 On any supported OS with Java and Android SDK configured:
 
@@ -66,7 +66,18 @@ cd android
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-The Gradle `syncGameAssets` task refreshes bundled assets from `public/` on each build and marks the packaged page as offline-only. Do not edit generated files in `android/app/build/`.
+The Gradle `syncGameAssets` task refreshes bundled assets from `public/` on each build and marks the packaged page as offline-only. It excludes `public/downloads/`, so downloaded APKs are not bundled recursively. Do not edit generated files in `android/app/build/`.
+
+To update the public download after validating a build with the public default:
+
+```powershell
+New-Item -ItemType Directory -Force public/downloads | Out-Null
+Copy-Item dist/echo-relay-android-debug.apk public/downloads/echo-relay.apk -Force
+(Get-Content dist/echo-relay-android-debug.apk.sha256).Replace('echo-relay-android-debug.apk', 'echo-relay.apk') | Set-Content public/downloads/echo-relay.apk.sha256
+npm run deploy
+```
+
+The download directory is ignored by Git. Preserve or regenerate these artifacts before later deployments from another checkout. Cloudflare serves the APK with an attachment filename and Android package MIME type.
 
 ## Native behavior
 

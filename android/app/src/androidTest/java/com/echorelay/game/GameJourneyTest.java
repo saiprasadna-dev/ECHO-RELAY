@@ -86,6 +86,28 @@ public class GameJourneyTest {
         onView(withId(R.id.connect_button)).perform(scrollTo(), click());
     }
 
+    /** Opt-in network check: upgrade an old Wi-Fi preference and use the packaged public default. */
+    @Test public void publicServerUpgradeConnectsWithoutEditingAddress() {
+        org.junit.Assume.assumeTrue("Supply publicServerCheck=true to test the live service",
+                "true".equals(InstrumentationRegistry.getArguments().getString("publicServerCheck")));
+        assertEquals("https://echo-relay.swapmyshow.workers.dev", BuildConfig.DEFAULT_SERVER_URL);
+        scenario.onActivity(activity -> activity.getSharedPreferences("relay", android.content.Context.MODE_PRIVATE)
+                .edit().putString("server", "http://192.168.29.195:8788/?room=YACAYR")
+                .remove("default_server").commit());
+        scenario.recreate();
+        onView(withId(R.id.server_url)).check(matches(withText(BuildConfig.DEFAULT_SERVER_URL + "/")));
+        onView(withId(R.id.server_note)).check(matches(withText(R.string.internet_note)));
+        capture("14-public-server-launcher");
+        onView(withId(R.id.connect_button)).perform(scrollTo(), click());
+        waitFor("#nickname", "");
+        type("#nickname", "Android Cloud Test");
+        tap("#entry-form button[type='submit']");
+        waitFor("#ready", "Ready");
+        waitFor(".connection.connected", "Relay connected");
+        capture("15-public-server-lobby");
+        step("PASS Wi-Fi preference migration, default HTTPS connection and live room creation");
+    }
+
     @Test public void offlineAllChambersWithLifecycleAndReplay() throws Exception {
         step("Native launcher"); capture("01-launcher");
         onView(withId(R.id.offline_button)).perform(scrollTo(), click());

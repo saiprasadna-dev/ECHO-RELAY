@@ -6,6 +6,18 @@ import java.util.Locale;
 
 /** Only explicit HTTPS servers, or numeric private IPv4 addresses in test builds. */
 final class ServerAddress {
+    /** Migrate the old Wi-Fi build once, while retaining later manual server choices. */
+    static String initialServer(String saved, String defaultServer, String previousDefault, boolean allowLan) {
+        String fallback = normalize(defaultServer, allowLan);
+        if (saved == null || saved.trim().isEmpty()) return fallback;
+        try {
+            String selected = normalize(saved, allowLan);
+            if (!fallback.equals(previousDefault) && fallback.startsWith("https:") && selected.startsWith("http:"))
+                return fallback;
+            return selected;
+        } catch (IllegalArgumentException e) { return fallback; }
+    }
+
     static String normalize(String input, boolean allowLan) {
         try {
             URI uri = new URI(input.trim());
