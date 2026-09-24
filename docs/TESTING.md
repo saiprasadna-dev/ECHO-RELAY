@@ -93,11 +93,17 @@ The two offline/recovery cases completed in 35.420 seconds (`OK (2 tests)`); the
 
 Setup failures are retained separately: software emulation failed before Android booted; the first accelerated boot displayed an Android System UI ANR, resolved by restarting the emulator with the successful configuration above. One multiplayer attempt timed out because the browser partner action arrived after the test's 90-second wait; its log is `online-partner-timeout.txt`. The complete fresh-room rerun passed. These emulator results do not establish two-phone Wi-Fi connectivity, physical-device performance, or production Cloudflare behavior.
 
+## Cloudflare deployment preparation: passed
+
+Wrangler 4.137.0 successfully built the deployment with `deploy --dry-run`: 26 public asset files and a 40.03 KiB Worker bundle (11.74 KiB gzip), with the `ROOMS` SQLite Durable Object and `ASSETS` bindings. The actual local workerd runtime started on port 8790 and returned a healthy `/api/health` response.
+
+Two browser origins created/joined room `39A2HG` against that runtime, established WebSocket sessions, readied both players, followed the guided Grow → Preserve → Drain → Cross sequence and reached the workshop. Refreshing Future retained its role and workshop progress. This checks the actual Cloudflare runtime for the first level and checkpoint reconnect; it is not a full six-level production playthrough. Cloudflare account authorization and public deployment remain pending.
+
 ## Deployment and broader release checks: pending
 
 Not yet verified:
 
-- Local Cloudflare Wrangler/workerd execution.
+- A complete six-destination playthrough in Cloudflare's runtime (the first level and checkpoint reconnect passed above).
 - Cloudflare production deployment and its public URL.
 - Two physical devices on different networks.
 - Load/abuse testing, independent security review or novice-player usability.

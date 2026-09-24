@@ -84,4 +84,4 @@ Official references checked September 23, 2026:
 
 ## Handoff limitation
 
-No Cloudflare account was authenticated and no public Worker deployment was performed during this handoff. Run the Cloudflare-runtime and separate-device checks before calling this a completed contest submission.
+Wrangler 4.137.0 built the deployment bundle successfully and the actual local Cloudflare runtime passed room creation, two-player joining/readiness, the guided bridge puzzle and checkpoint reconnect. No Cloudflare account was authenticated and no public Worker deployment was performed during this handoff. Account sign-in, a complete Cloudflare playthrough and separate-device checks are still required; see [TESTING.md](TESTING.md).
