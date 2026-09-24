@@ -3,6 +3,7 @@
  * The server owns the canonical Room; browsers only receive projectView().
  * The same rules also power the explicitly labelled, local-only practice mode.
  */
+import { DESTINATIONS, HEADINGS, WALK_SPEED, initialTravel, positionAt, nearbyStation } from './travel.js';
 export const ROLES = ["past", "future"];
 export const SHAPES = ["circle", "triangle", "diamond"];
 export const SYMBOLS = ["sun", "moon", "star", "wave"];
@@ -56,6 +57,16 @@ export function createRoom(code, name, id, tokenHash, seed, now = Date.now()) {
   room.world = makeWorld(room);
   return room;
 }
+function extendAdventure(room, now) {
+  room.schema = 2;
+  room.journey = { motion: initialTravel(1, now), arrivals: { past: false, future: false } };
+  room.hints = [0,0,0,0,0,0];
+  Object.assign(room.world, { tide: 1, safeTide: randomInt(room,3) + 1, mooring: 'hold', heading: 'north', safeHeading: HEADINGS[randomInt(room,3)], shutter: 'closed' });
+  return room;
+}
+export function createAdventureRoom(code, name, id, tokenHash, seed, now = Date.now()) {
+  return extendAdventure(createRoom(code,name,id,tokenHash,seed,now), now);
+}
 export function joinRoom(original, name, id, tokenHash, now = Date.now()) {
   need(now < original.lastActivity + ROOM_TTL, "EXPIRED", "This relay has faded. Create a new one.", 404);
   need(original.status === "lobby" && !original.players.future, "FULL", "Both timelines already have a traveller. Ask your friend for a new room.", 409);
@@ -75,8 +86,12 @@ export function physical(room) {
   const aligned = w.rings.every((v, i) => v === w.target[i]);
   const lens = a?.kind === "lens" ? a.condition : (aligned && w.beamPower === "lens" ? "charged" : "empty");
   const flooded = w.water === "grow";
+  const skiff = a?.kind === 'skiff' ? a.condition : w.tide === w.safeTide ? 'afloat' : 'grounded';
+  const beacon = a?.kind === 'beacon' ? a.condition : w.heading === w.safeHeading && w.shutter === 'closed' ? 'lit' : 'dark';
   return {
-    bridge, flooded, drive, lens,
+    bridge, flooded, drive, lens, skiff, beacon,
+    canSail: a?.kind === 'skiff' && skiff === 'afloat' && w.mooring === 'release',
+    canAscend: a?.kind === 'beacon' && beacon === 'lit' && w.shutter === 'open',
     canCross: bridge === "grown" && !flooded && a?.kind === "bridge" && a.condition === "grown",
     canRide: drive === "working" && w.power === "lift" && a?.kind === "drive" && a.condition === "working",
     canPulse: lens === "charged" && w.beamPower === "portal" && a?.kind === "lens" && a.condition === "charged"
@@ -90,6 +105,13 @@ function validateEnvelope(c) {
 }
 function advance(room, now) {
   room.chamber++; room.epoch++; room.world.anchor = null; room.proposal = null;
+  if (room.journey) {
+    room.journey.motion = initialTravel(room.chamber, now);
+    room.journey.arrivals = { past: false, future: false };
+    room.world.pulses = { past: false, future: false };
+    room.event = ['','','The garden gate remembers. The workshop awaits.','The lift reaches the observatory. A road through time awaits.','The portal opens onto a moonlit canal. Your journey continues.','The skiff reaches the storm tower. Follow the light above the clouds.','Two eras become one. Walk to the circle and find each other.'][room.chamber];
+    return;
+  }
   room.event = room.chamber === 2 ? "The garden gate remembers. One step closer." : "The lift is secured. The last light is waiting.";
 }
 function resetChamber(room) {
@@ -98,6 +120,9 @@ function resetChamber(room) {
   if (room.chamber === 1) w.water = "drain";
   if (room.chamber === 2) { w.gear = "circle"; w.power = "workshop"; }
   if (room.chamber === 3) { w.rings = ["sun", "sun", "sun"]; w.beamPower = "lens"; }
+  if (room.chamber === 4) { w.tide = 1; w.mooring = 'hold'; }
+  if (room.chamber === 5) { w.heading = 'north'; w.shutter = 'closed'; }
+  if (room.journey) { room.journey.motion = initialTravel(room.chamber); room.journey.arrivals = { past:false, future:false }; }
   room.epoch++; room.proposal = null;
   room.event = "A fresh attempt. Your secured checkpoints are safe.";
 }
@@ -115,6 +140,7 @@ function enactProposal(room, kind, now) {
     }
     room.status = "lobby"; room.chamber = 1; room.startedAt = null; room.finishedAt = null;
     room.hints = [0, 0, 0]; room.messages = [];
+    if (room.journey) extendAdventure(room, now);
     room.event = "A new relay. This time, see the other side.";
   } else room.event = "Your timelines are swapped. Ready when you are.";
   room.epoch++; room.proposal = null;
@@ -136,7 +162,23 @@ export function applyCommand(original, playerId, command, onlineIds, now = Date.
     need(bothHere, "PAUSED", "Your partner is disconnected. Their place is safe; wait for them to rejoin.");
   };
   const requireRole = expected => need(role === expected, "ROLE", "Only the traveller in the other era can do that.", 403);
+  if (room.journey && ['water','gear','power','ring','beam','anchor','release','cross','ride','pulse','tide','mooring','sail','heading','shutter','ascend','meet'].includes(c.type)) {
+    requirePlaying();
+    const station = nearbyStation(room.chamber, role, room.journey.motion[role], now);
+    need(station?.actions.includes(c.type), 'WALK', 'Walk to the marked object before using it.');
+  }
   switch (c.type) {
+    case 'move': {
+      requirePlaying();
+      need(room.journey, 'COMMAND', 'Walking is available in a new adventure room.');
+      need(Number.isFinite(c.x) && Number.isFinite(c.y) && c.x >= 8 && c.x <= 92 && c.y >= (room.chamber===1?72:81) && c.y <= (room.chamber===1?81:91), 'GROUND', 'Stay on the stone path.');
+      if(room.chamber===1 && c.x>32) need(role==='future' && physical(room).canCross,'BLOCKED','The canal blocks this path. Preserve the grown root bridge and drain the water first.');
+      const point = positionAt(room.journey.motion[role], now);
+      const duration = Math.hypot(c.x - point.x, c.y - point.y) / WALK_SPEED * 1000;
+      room.journey.motion[role] = { x:c.x, y:c.y, fromX:point.x, fromY:point.y, startedAt:now, arrivesAt:now + duration };
+      room.journey.arrivals[role] = false;
+      break;
+    }
     case "ready":
       need(room.status === "lobby", "PHASE", "Your relay has already begun.");
       need(typeof c.value === "boolean", "VALUE", "Choose ready or not ready.");
@@ -200,7 +242,8 @@ export function applyCommand(original, playerId, command, onlineIds, now = Date.
     case "anchor": {
       requirePlaying(); requireRole("future");
       if (w.anchor) break; // Capture only once, never silently recapture a different condition.
-      const p = physical(room), kind = ["bridge", "drive", "lens"][room.chamber - 1];
+      const p = physical(room), kind = ["bridge", "drive", "lens", "skiff", "beacon"][room.chamber - 1];
+      need(kind, 'CHAMBER', 'There is nothing to anchor here.');
       w.anchor = { kind, condition: p[kind] };
       room.event = "A small piece of the future refuses to disappear.";
       break;
@@ -223,8 +266,42 @@ export function applyCommand(original, playerId, command, onlineIds, now = Date.
       w.pulses[role] = true;
       room.event = "One pulse is waiting. There is no rush; find each other.";
       if (w.pulses.past && w.pulses.future) {
-        room.status = "won"; room.finishedAt = now; room.epoch++; room.proposal = null;
-        room.event = "You didn't escape time. You brought each other home.";
+        if (room.journey) advance(room, now);
+        else { room.status = "won"; room.finishedAt = now; room.epoch++; room.proposal = null;
+          room.event = "You didn't escape time. You brought each other home."; }
+      }
+      break;
+    case 'tide':
+      requirePlaying(); requireRole('past');
+      need(room.journey && room.chamber === 4 && [1,2,3].includes(c.value), 'VALUE', 'Choose tide mark 1, 2 or 3.');
+      w.tide = c.value; room.event = 'The sluice turns. Water rises against an old tide mark.'; break;
+    case 'mooring':
+      requirePlaying(); requireRole('past');
+      need(room.journey && room.chamber === 4 && ['hold','release'].includes(c.value), 'VALUE', 'Hold or release the mooring.');
+      w.mooring = c.value; room.event = 'The mooring rope answers across time.'; break;
+    case 'sail':
+      requirePlaying(); requireRole('future');
+      need(room.chamber === 4 && physical(room).canSail, 'BLOCKED', 'Preserve the floating skiff and release its mooring first.');
+      advance(room, now); break;
+    case 'heading':
+      requirePlaying(); requireRole('past');
+      need(room.journey && room.chamber === 5 && HEADINGS.includes(c.value), 'VALUE', 'Choose North, East or West.');
+      w.heading = c.value; room.event = 'The beacon turns toward a different horizon.'; break;
+    case 'shutter':
+      requirePlaying(); requireRole('past');
+      need(room.journey && room.chamber === 5 && ['closed','open'].includes(c.value), 'VALUE', 'Close or open the wind shutters.');
+      w.shutter = c.value; room.event = 'The wind shutters move. The sky bridge waits.'; break;
+    case 'ascend':
+      requirePlaying(); requireRole('future');
+      need(room.chamber === 5 && physical(room).canAscend, 'BLOCKED', 'Preserve the lit beacon and open the wind shutters first.');
+      advance(room, now); break;
+    case 'meet':
+      requirePlaying(); need(room.journey && room.chamber === 6, 'CHAMBER', 'Your partner waits in the reunion garden.');
+      room.journey.arrivals[role] = true;
+      room.event = 'You reached the meeting circle. Your partner is on their way.';
+      if (ROLES.every(r => room.journey.arrivals[r] && nearbyStation(6,r,room.journey.motion[r],now)?.id === 'meeting')) {
+        room.status = 'won'; room.finishedAt = now; room.epoch++; room.proposal = null;
+        room.event = 'At last, the same place. At last, the same time.';
       }
       break;
     default: throw new GameError("COMMAND", "That action is not part of this relay.");
@@ -242,7 +319,8 @@ export function projectView(room, playerId, onlineIds, now = Date.now()) {
   const p = physical(room), w = room.world;
   const view = {
     code: room.code, role, revision: room.revision, epoch: room.epoch,
-    status: room.status, chamber: room.chamber, title: CHAMBERS[room.chamber - 1],
+    status: room.status, chamber: room.chamber, title: (room.journey ? DESTINATIONS : CHAMBERS)[room.chamber - 1],
+    adventure: Boolean(room.journey), totalChambers: room.journey ? 6 : 3,
     players: Object.fromEntries(ROLES.map(r => [r, room.players[r] ? {
       name: room.players[r].name, ready: room.players[r].ready, connected: onlineIds.has(room.players[r].id)
     } : null])),
@@ -259,11 +337,33 @@ export function projectView(room, playerId, onlineIds, now = Date.now()) {
   if (room.chamber === 1) view.scene = role === "past" ? { water: w.water } : { bridge: p.bridge, flooded: p.flooded, canCross: p.canCross };
   if (room.chamber === 2) view.scene = role === "past" ? { gear: w.gear, power: w.power } : { requiredGear: w.requiredGear, drive: p.drive, liftPowered: w.power === "lift", canRide: p.canRide };
   if (room.chamber === 3) view.scene = role === "past" ? { rings: [...w.rings], beamPower: w.beamPower, canPulse: p.canPulse, pulses: { ...w.pulses } } : { target: [...w.target], lens: p.lens, portalPowered: w.beamPower === "portal", canPulse: p.canPulse, pulses: { ...w.pulses } };
+  if (room.chamber === 4) view.scene = role === 'past' ? { tide:w.tide, mooring:w.mooring } : { safeTide:w.safeTide, skiff:p.skiff, released:w.mooring === 'release', canSail:p.canSail };
+  if (room.chamber === 5) view.scene = role === 'past' ? { heading:w.heading, shutter:w.shutter } : { safeHeading:w.safeHeading, beacon:p.beacon, open:w.shutter === 'open', canAscend:p.canAscend };
+  if (room.chamber === 6) view.scene = { arrivals:{ ...room.journey.arrivals } };
+  if (room.journey) view.travel = {
+    motion: structuredClone(room.journey.motion[role]),
+    blockedCrossing: room.chamber===1 && (role==='past' || !p.canCross),
+    companion: room.chamber === 6 ? structuredClone(room.journey.motion[role === 'past' ? 'future' : 'past']) : null,
+    arrivals: { ...room.journey.arrivals }
+  };
+  if (room.journey) {
+    // Share cooperative progress, never the private shape, symbols, tide or heading.
+    // This lets the guide say whose turn it is without exposing the other era's clue.
+    const desired = ['grown','working','charged','afloat','lit'][room.chamber - 1];
+    const current = [p.bridge,p.drive,p.lens,p.skiff,p.beacon][room.chamber - 1];
+    const changed = [!p.flooded,w.power === 'lift',w.beamPower === 'portal',w.mooring === 'release',w.shutter === 'open'][room.chamber - 1];
+    const saved = Boolean(w.anchor && w.anchor.condition === desired);
+    view.guide = { phase: room.chamber === 6 ? 0 : saved ? (changed ? 3 : 2) : current === desired ? 1 : 0,
+      recovery: Boolean(w.anchor && !saved) };
+  }
   return view;
 }
 
 export const HINTS = [
   ["The same water can make a bridge and block a doorway.", "An anchor preserves one object, not the whole garden.", "Past: choose Grow. Future: anchor the grown bridge. Past: choose Drain. Future: cross the dry exit."],
   ["The old blueprint survived in the future, but only the past can install its bearing.", "The drive and the lift need power at different moments. Save the working drive before moving the power.", "Future: share the blueprint shape. Past: install that shape with Workshop power. Future: anchor the working drive. Past: switch to Lift. Future: ride."],
-  ["The future's constellation is a sequence, not a set. Order matters.", "Charge something worth preserving before giving the portal its light.", "Future: share all three symbols in order. Past: match the rings with Lens power. Future: anchor the charged lens. Past: switch to Portal. Both: send your final pulse."]
+  ["The future's constellation is a sequence, not a set. Order matters.", "Charge something worth preserving before giving the portal its light.", "Future: share all three symbols in order. Past: match the rings with Lens power. Future: anchor the charged lens. Past: switch to Portal. Both: send your pulse."],
+  ['Walk to the tide chart in the future. One mark is safe for the skiff.', 'Preserve the floating boat before releasing the mooring.', 'Future: read the tide chart. Past: set that tide mark. Future: anchor the afloat skiff. Past: release the mooring. Future: walk to the jetty and sail.'],
+  ['The future weather map shows which way the beacon must point.', 'The beacon needs shelter to light, but the sky bridge needs open shutters.', 'Future: share the compass direction. Past: set it with shutters closed. Future: anchor the lit beacon. Past: open the shutters. Future: cross the sky bridge.'],
+  ['Your timelines have finally joined. Find each other in the circle.', 'Both travellers need to reach the meeting circle.', 'Walk to Meet your partner, then choose I am here on both screens.']
 ];

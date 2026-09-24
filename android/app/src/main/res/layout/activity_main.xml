@@ -1,0 +1,34 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout android:id="@+id/launcher" android:layout_width="match_parent" android:layout_height="match_parent">
+        <ImageView android:id="@+id/hero_image" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:importantForAccessibility="no"/>
+        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/hero_shade"/>
+        <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="28dp">
+                <ImageView android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_echo" android:importantForAccessibility="no"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="@string/eyebrow" android:textColor="#E0C99E" android:textSize="11sp" android:letterSpacing="0.14"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/title" android:textColor="#FFF3DF" android:fontFamily="serif" android:textSize="62sp" android:lineSpacingExtra="-12sp" android:includeFontPadding="false"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="@string/tagline" android:textColor="#FFF3DF" android:textSize="23sp" android:fontFamily="serif"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/description" android:textColor="#D0DCDA" android:textSize="15sp" android:lineSpacingExtra="4dp"/>
+                <Button android:id="@+id/offline_button" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="@string/offline"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/offline_note" android:textColor="#C3CFCC" android:textSize="12sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:padding="20dp" android:orientation="vertical" android:background="@drawable/panel">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/multiplayer" android:textColor="#FFF3DF" android:textSize="23sp" android:fontFamily="serif"/>
+                    <TextView android:id="@+id/server_note" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="@string/wifi_note" android:textColor="#CCD8D5" android:textSize="14sp" android:lineSpacingExtra="3dp"/>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="@string/server_label" android:textColor="#D8B77E" android:textSize="11sp" android:letterSpacing="0.1"/>
+                    <EditText android:id="@+id/server_url" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:background="@drawable/input" android:textColor="#FFFFFF" android:textColorHint="#9BAEAA" android:textSize="14sp" android:inputType="textUri" android:singleLine="true" android:imeOptions="actionGo" android:importantForAutofill="no" android:hint="@string/server_hint"/>
+                    <Button android:id="@+id/connect_button" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="@string/connect"/>
+                </LinearLayout>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="@string/version" android:textColor="#B8C6C3" android:textSize="11sp" android:gravity="center" android:letterSpacing="0.08"/>
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+    <LinearLayout android:id="@+id/game_container" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="#101D20" android:paddingStart="0dp" android:paddingEnd="16dp">
+            <Button android:id="@+id/menu_button" android:layout_width="wrap_content" android:layout_height="48dp" android:text="@string/menu" android:textAllCaps="false" android:textColor="#E0C99E" style="?android:attr/borderlessButtonStyle"/>
+            <TextView android:id="@+id/mode_label" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:gravity="end" android:textColor="#B8C6C3" android:textSize="11sp" android:letterSpacing="0.12"/>
+        </LinearLayout>
+        <ProgressBar android:id="@+id/loading" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="2dp" android:indeterminate="true" android:contentDescription="@string/loading"/>
+        <FrameLayout android:id="@+id/web_container" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
+    </LinearLayout>
+</FrameLayout>

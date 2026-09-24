@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">ECHO RELAY</string>
+    <string name="eyebrow">A SIGNAL ACROSS TWO HUNDRED YEARS</string>
+    <string name="title">ECHO\nRELAY</string>
+    <string name="tagline">Change my past.\nSave our future.</string>
+    <string name="description">One world. Two eras. Find your way home together.</string>
+    <string name="offline">Explore solo offline</string>
+    <string name="offline_note">Six destinations. Walk, discover and reunite.</string>
+    <string name="multiplayer">Play with a friend</string>
+    <string name="wifi_note">Connect both phones to the computer’s Wi-Fi, then enter the same game server address.</string>
+    <string name="internet_note">Enter the published HTTPS game server address. Your friend must use the same server.</string>
+    <string name="server_label">GAME SERVER ADDRESS</string>
+    <string name="server_hint">http://192.168.1.10:8787</string>
+    <string name="connect">Connect to the relay</string>
+    <string name="menu">Menu</string>
+    <string name="practice_mode">OFFLINE PRACTICE</string>
+    <string name="online_mode">MULTIPLAYER</string>
+    <string name="leave_title">Return to the menu?</string>
+    <string name="leave_offline">This practice run will end. You can start a new one anytime.</string>
+    <string name="leave_online">Your role stays reserved. Connect to the same server and resume your relay to continue.</string>
+    <string name="stay">Keep playing</string>
+    <string name="return_menu">Return to menu</string>
+    <string name="retry">Try again</string>
+    <string name="connection_error">Could not reach the relay</string>
+    <string name="connection_help">Keep the computer’s game server running and both devices on the same Wi-Fi. Check the address and allow the server through Windows Firewall on your private network.</string>
+    <string name="internet_help">Check your connection and the published game server address, then try again.</string>
+    <string name="loading">Finding your signal…</string>
+    <string name="version">ANDROID · 0.1 · NO ADS · NO SIGN-UP</string>
+</resources>

@@ -1,4 +1,4 @@
-import { applyCommand, createRoom, joinRoom, projectView, roleFor, ROOM_TTL, GameError } from "../public/core/game.js";
+import { applyCommand, createAdventureRoom, joinRoom, projectView, roleFor, ROOM_TTL, GameError } from "../public/core/game.js";
 import { json, errorResponse, readJson, readCookie, hashToken, randomToken, equalHash, tokenCookie } from "./http.js";
 
 /** Shared application logic. platform only supplies the WebSocket upgrade primitives. */
@@ -55,7 +55,7 @@ export class RoomService {
           if (this.room) await this.expire();
           const input = await readJson(request), token = randomToken(), id = crypto.randomUUID();
           const code = creating[1], hash = await hashToken(token);
-          const room = createRoom(code, input.name, id, hash, crypto.getRandomValues(new Uint32Array(1))[0]);
+          const room = createAdventureRoom(code, input.name, id, hash, crypto.getRandomValues(new Uint32Array(1))[0]);
           await this.commit(room);
           await this.ctx.storage.setAlarm(room.lastActivity + ROOM_TTL);
           return json({ code, role: "past" }, 201, { "Set-Cookie": tokenCookie(code, token, secure) });

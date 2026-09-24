@@ -1,5 +1,6 @@
 import { makeId } from "./core/game.js";
 export async function api(path, body) {
+  if (document.querySelector('meta[name="echo-mode"]')?.content === 'offline') throw new Error('Return to the Android menu to connect to a multiplayer server.');
   if (!['http:', 'https:'].includes(location.protocol)) throw new Error('Online play needs the local server or a Cloudflare deployment. Use solo practice in this offline preview.');
   const response = await fetch(path, {
     credentials: "same-origin", cache: "no-store",

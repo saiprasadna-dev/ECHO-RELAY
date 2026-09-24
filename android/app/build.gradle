@@ -1,0 +1,56 @@
+plugins { id 'com.android.application' }
+
+// Package the actual web game, so Android practice never drifts from browser rules.
+def gameAssets = tasks.register('syncGameAssets', Sync) {
+    from('../../public')
+    into(layout.buildDirectory.dir('generated/gameAssets'))
+    filesMatching('index.html') {
+        filter { line -> line.replace('<head>', '<head>\n  <meta name="echo-mode" content="offline">') }
+    }
+}
+
+android {
+    namespace 'com.echorelay.game'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.echorelay.game'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '0.1.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        def server = providers.gradleProperty('relayServerUrl').getOrElse('')
+        buildConfigField 'String', 'DEFAULT_SERVER_URL', '"' + server.replace('\\', '\\\\').replace('"', '\\"') + '"'
+        manifestPlaceholders = [allowCleartext: 'false']
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-wifi-test'
+            manifestPlaceholders = [allowCleartext: 'true']
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+        }
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.assets.srcDir(layout.buildDirectory.dir('generated/gameAssets'))
+    lint { abortOnError true }
+}
+tasks.named('preBuild').configure { dependsOn(gameAssets) }
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.14.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-web:3.6.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+}

@@ -8,3 +8,11 @@ __pycache__/
 *.pyc
 .DS_Store
 offline-practice.html
+.android-tools/
+.local-data-android/
+android/.gradle/
+android/**/build/
+android/local.properties
+android/*.jks
+android/*.keystore
+dist/

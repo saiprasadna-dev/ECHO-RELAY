@@ -1,5 +1,5 @@
 /**
- * Dependency-free LOOPBACK-ONLY development adapter.
+ * Dependency-free development adapter. Loopback by default; --lan opts into Wi-Fi testing.
  * Runs the SAME router and RoomService as the Cloudflare deployment.
  * This is not workerd/Miniflare and is not a production hosting server.
  * Production uses Cloudflare's native WebSocket implementation and storage.
@@ -7,15 +7,18 @@
 import http from "node:http";
 import { createHash } from "node:crypto";
 import { readFile, writeFile, rename, mkdir, unlink } from "node:fs/promises";
-import { resolve, extname, dirname } from "node:path";
+import { resolve, extname, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RoomService } from "../worker/room-service.js";
 import { route } from "../worker/router.js";
+import { localNetworkConfig } from "./local-network.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC = resolve(ROOT, "public");
 const DATA = resolve(ROOT, process.env.RELAY_DATA_DIR || ".local-data");
 const PORT = Number(process.env.PORT || 8787);
+const LAN = process.argv.includes('--lan');
+const network = localNetworkConfig({ lan: LAN, port: PORT });
 await mkdir(DATA, { recursive: true });
 
 function frame(opcode, payload) {
@@ -122,7 +125,7 @@ class LocalContext {
   getWebSockets() { return this.sockets; }
 }
 const rooms = new Map();
-const mime = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".webmanifest": "application/manifest+json" };
+const mime = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".webmanifest": "application/manifest+json" };
 const env = {
   ROOMS: {
     idFromName: code => code,
@@ -138,8 +141,18 @@ const env = {
   ASSETS: { async fetch(request) {
     let path;
     try { path = decodeURIComponent(new URL(request.url).pathname); } catch { return new Response("Bad path", { status: 400 }); }
+    if (LAN && path === '/android.apk') {
+      try {
+        const bytes = await readFile(resolve(ROOT, 'dist/echo-relay-android-debug.apk'));
+        return new Response(request.method === 'HEAD' ? null : bytes, { headers: {
+          'Content-Type': 'application/vnd.android.package-archive', 'Content-Length': String(bytes.length),
+          'Content-Disposition': 'attachment; filename="echo-relay-android-debug.apk"',
+          'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'
+        } });
+      } catch { return new Response('Build the Android APK first with npm run android:build.', { status: 404 }); }
+    }
     let file = resolve(PUBLIC, `.${path}`);
-    if (file !== PUBLIC && !file.startsWith(PUBLIC + "/")) return new Response("Not found", { status: 404 });
+    if (file !== PUBLIC && !file.startsWith(PUBLIC + sep)) return new Response("Not found", { status: 404 });
     if (path === "/" || !extname(path)) file = resolve(PUBLIC, "index.html");
     try {
       const bytes = await readFile(file);
@@ -147,13 +160,13 @@ const env = {
     } catch { return new Response("Not found", { status: 404 }); }
   } }
 };
-function allowedHost(req) { return req.headers.host === `127.0.0.1:${PORT}` || req.headers.host === `localhost:${PORT}`; }
+function allowedHost(req) { return network.acceptsHost(req.headers.host); }
 function webRequest(req, body) {
   return new Request(`http://${req.headers.host}${req.url}`, { method: req.method, headers: req.headers, ...(body?.length ? { body } : {}) });
 }
 const server = http.createServer(async (req, res) => {
   try {
-    if (!allowedHost(req)) { res.writeHead(400); res.end("Use localhost or 127.0.0.1"); return; }
+    if (!allowedHost(req)) { res.writeHead(400); res.end("Use a game server address printed in the terminal."); return; }
     const pieces = []; let size = 0;
     for await (const part of req) { size += part.length; if (size > 4096) { res.writeHead(413); res.end("Too large"); return; } pieces.push(part); }
     const result = await route(webRequest(req, Buffer.concat(pieces)), env);
@@ -171,4 +184,11 @@ server.on("upgrade", async (req, socket, head) => {
     result.localUpgrade.attach(socket, head);
   } catch (e) { console.error(e); socket.destroy(); }
 });
-server.listen(PORT, "127.0.0.1", () => console.log(`\nECHO RELAY local development\nhttp://127.0.0.1:${PORT}\nTwo players: use two different browser profiles or one private window.\nLocal adapter only; use npm run cloudflare:dev for native workerd verification.\n`));
+server.listen(PORT, network.bind, () => {
+  console.log(`\nECHO RELAY local development\nhttp://127.0.0.1:${PORT}\nTwo players: use two different browser profiles or one private window.\nLocal adapter only; use npm run cloudflare:dev for native workerd verification.\n`);
+  if (LAN) {
+    console.log('Wi-Fi test mode. Connect both phones to this computer’s private network.');
+    for (const address of network.addresses) console.log(`Android server address: http://${address}:${PORT}`);
+    if (!network.addresses.length) console.log('No private IPv4 adapter found. Connect this computer to Wi-Fi and restart.');
+  }
+});
