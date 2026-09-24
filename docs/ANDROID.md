@@ -2,6 +2,8 @@
 
 The Android app uses a native launcher and Android System WebView to run the same cinematic game as the browser. Environment artwork, traveller sprites, scripts, styles and puzzle rules are bundled for offline practice. Multiplayer loads the selected game server in its own origin, preserving the existing HTTP-only cookies, origin checks and WebSocket protocol. Android and browser players can share a relay.
 
+**Public server:** enter `https://echo-relay.swapmyshow.workers.dev` in the Android server field. The laptop player opens the same URL. This works over the internet without the laptop's local server; create a new online room because local room saves remain on the computer.
+
 ## Install the test APK
 
 Build output: `dist/echo-relay-android-debug.apk` (Android 8.0 / API 26 or newer).

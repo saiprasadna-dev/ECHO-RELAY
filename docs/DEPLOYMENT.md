@@ -1,5 +1,9 @@
 # Deploy ECHO RELAY without Replit
 
+## Current deployment
+
+Published September 24, 2026: **[https://echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev)**. Worker `echo-relay`, version `2464975b-bd6d-4d7f-b58e-a66e5601cf14`, deployed with Wrangler 4.137.0. This includes the static game assets and SQLite-backed `RelayRoom` Durable Object. Enter the same HTTPS URL in Android to connect from any network. Local room codes do not transfer to the production server.
+
 ## 1. Run the code first
 
 Install Node.js 22.12+, clone this repository and run `npm start`. Open the printed loopback URL using two different browser profiles. Run `npm run check` and `npm test`.
@@ -13,7 +17,7 @@ Sign in to your Cloudflare account. Keep Workers on the Free plan; do not accept
 From the repository root:
 
 ```sh
-npx --yes wrangler@4 login
+npx --yes wrangler@4.137.0 login
 npm run cloudflare:dev
 ```
 
@@ -41,7 +45,7 @@ Do not upload only `public/` to static-only Pages. Online multiplayer needs:
 
 These are already in `wrangler.jsonc`. Do not replace the SQLite migration with legacy key-value class configuration. Do not rewrite migration history for a service that has already been deployed.
 
-Wrangler is invoked as `wrangler@4`, which pins the major, not the exact minor. For a reproducible release pipeline, pin a reviewed exact version after verifying deployment. There is no automatic deployment workflow in this initial version.
+The npm scripts pin Wrangler to the verified deployment version, `4.137.0`. There is no automatic deployment workflow: Git pushes and Cloudflare deployments are separate actions.
 
 ## 4. Check two real devices before sharing widely
 
@@ -82,6 +86,6 @@ Official references checked September 23, 2026:
 
 **Free quota exhausted:** inspect usage and wait for the relevant reset. This does not prevent writing or testing the game locally.
 
-## Handoff limitation
+## Verification
 
-Wrangler 4.137.0 built the deployment bundle successfully and the actual local Cloudflare runtime passed room creation, two-player joining/readiness, the guided bridge puzzle and checkpoint reconnect. No Cloudflare account was authenticated and no public Worker deployment was performed during this handoff. Account sign-in, a complete Cloudflare playthrough and separate-device checks are still required; see [TESTING.md](TESTING.md).
+Cloudflare authorization and production deployment succeeded. The published homepage and browser room creation work, and `/api/health` returns HTTP 200. Local workerd also passed the guided bridge puzzle and checkpoint reconnect. See [TESTING.md](TESTING.md) for the recorded production checks and remaining physical-device validation.

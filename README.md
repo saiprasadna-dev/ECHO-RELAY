@@ -2,6 +2,8 @@
 
 **Change my past. Save our future.**
 
+**Play online:** [echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev). Use this same HTTPS address in the Android launcher. Online rooms are separate from rooms saved on your local development server.
+
 A two-player cooperative walking adventure. One traveller changes the past; the other anchors an object in the future so it survives the next change. Walk to objects to discover clues and controls across **The Root Bridge**, **The Clockwork Lift**, **The Last Light**, **The Moonlit Canal**, **The Storm Tower**, and **The Reunion Garden**. Both travellers reach the meeting circle before the shared celebration.
 
 This is the standalone game source, not the incomplete Replit build. No Replit subscription, paid AI API, player account or custom domain is needed by the application.

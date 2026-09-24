@@ -12,7 +12,7 @@
     "android:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-android-emulator.ps1",
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check.mjs",
-    "cloudflare:dev": "npx --yes wrangler@4 dev",
-    "deploy": "npx --yes wrangler@4 deploy"
+    "cloudflare:dev": "npx --yes wrangler@4.137.0 dev",
+    "deploy": "npx --yes wrangler@4.137.0 deploy"
   }
 }

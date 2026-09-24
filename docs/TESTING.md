@@ -97,14 +97,21 @@ Setup failures are retained separately: software emulation failed before Android
 
 Wrangler 4.137.0 successfully built the deployment with `deploy --dry-run`: 26 public asset files and a 40.03 KiB Worker bundle (11.74 KiB gzip), with the `ROOMS` SQLite Durable Object and `ASSETS` bindings. The actual local workerd runtime started on port 8790 and returned a healthy `/api/health` response.
 
-Two browser origins created/joined room `39A2HG` against that runtime, established WebSocket sessions, readied both players, followed the guided Grow → Preserve → Drain → Cross sequence and reached the workshop. Refreshing Future retained its role and workshop progress. This checks the actual Cloudflare runtime for the first level and checkpoint reconnect; it is not a full six-level production playthrough. Cloudflare account authorization and public deployment remain pending.
+Two browser origins created/joined room `39A2HG` against that runtime, established WebSocket sessions, readied both players, followed the guided Grow → Preserve → Drain → Cross sequence and reached the workshop. Refreshing Future retained its role and workshop progress. This local UI check covers the first level and checkpoint reconnect. The subsequent production verification is recorded below.
+
+## Cloudflare production: deployed and checked
+
+On September 24, 2026, Wrangler 4.137.0 deployed `echo-relay` to **[https://echo-relay.swapmyshow.workers.dev](https://echo-relay.swapmyshow.workers.dev)**, version `2464975b-bd6d-4d7f-b58e-a66e5601cf14`. The Worker uses the configured `ROOMS` SQLite Durable Object and `ASSETS` bindings. The public health endpoint returned HTTP 200. The in-app browser loaded the artwork, created room `YPK7L5`, and displayed a connected lobby with a complete HTTPS invitation; the inspected page had no horizontal overflow.
+
+Two independent HTTP/WebSocket clients completed all six destinations on the production origin in room `P2C8Z5`. Verified room creation/joining, both-player readiness, rejection of an untrusted Origin and an unauthenticated session request, walking/proximity enforcement, chat delivery, private role projections, disconnect pause, reconnect with the grown bridge still preserved, every puzzle, both portal pulses, the shared reunion/ending and mutually approved replay with swapped roles.
+
+This was a production **protocol test**, not an automated browser or physical-phone playthrough. An initial test run reached the storm tower before the test client attempted its next action ahead of the other socket's level update; waiting for both clients' next-level state corrected the test, and a fresh full run passed without application changes. Local evidence is retained in ignored `test-results/cloudflare-live.mjs` and `test-results/cloudflare-live.txt`. The existing two-client UI release script remains unexecuted.
 
 ## Deployment and broader release checks: pending
 
 Not yet verified:
 
-- A complete six-destination playthrough in Cloudflare's runtime (the first level and checkpoint reconnect passed above).
-- Cloudflare production deployment and its public URL.
+- A complete six-destination browser/Android UI playthrough on the public origin (production protocol playthrough passed above).
 - Two physical devices on different networks.
 - Load/abuse testing, independent security review or novice-player usability.
 
